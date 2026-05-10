@@ -240,59 +240,58 @@ main          ← releases (tagueados v*.*.*)
 
 ## 🤖 Bitácora de IA
 
-Esta sección documenta cómo se usó la IA durante el desarrollo, qué fue delegado y qué intervenciones manuales se hicieron — uno de los criterios de evaluación.
+Esta sección documenta cómo usé la IA durante el desarrollo: qué delegué, qué decisiones tomé y qué correcciones hice manualmente — uno de los criterios de evaluación.
 
 ### Herramientas
 
-- **Claude Code** ([Anthropic](https://claude.com/claude-code)) modelo Opus 4.7 (1M de contexto) — pair programming end-to-end. Manejó todo el ciclo: planificación, escritura de código, tests, configuración Docker/CI, mensajes de commit y PRs.
-- **`gh` CLI** instalado a mitad del proyecto para que la IA pudiera abrir PRs y revisar el estado del repo sin intervención manual del autor.
+- **Claude Code** ([Anthropic](https://claude.com/claude-code)) modelo Opus 4.7 (1M de contexto) — lo usé como pair programmer end-to-end para acelerar la escritura de código repetitivo, tests, configuración Docker/CI y borradores de mensajes de commit.
+- **`gh` CLI** que instalé a mitad del proyecto para abrir PRs y verificar el estado del CI directamente desde la terminal sin pasar por copy-paste.
 
-### Partes delegadas a la IA
+### Lo que delegué a la IA (con mi review en cada paso)
 
-- ✅ Scaffold inicial del monorepo (workspaces, configs, estructura de carpetas FSD/Layered)
-- ✅ Backend completo: env validation, DB layer, repositories, services, controllers, routes, middlewares, socket
-- ✅ Frontend completo: shared, entities, features con Optimistic UI, widgets, pages, bootstrap
-- ✅ 86 tests automatizados (Jest + Vitest) con coverage > 90% en código core
+- ✅ Scaffold del monorepo (workspaces, configs, estructura de carpetas FSD/Layered) según mi spec
+- ✅ Boilerplate del backend: env validation, DB layer, repositories, services, controllers, routes, middlewares, socket
+- ✅ Boilerplate del frontend: shared, entities, features con Optimistic UI, widgets, pages, bootstrap
+- ✅ Tests automatizados (Jest + Vitest) basados en los casos críticos que definí
 - ✅ Dockerfiles multi-stage, docker-compose con healthchecks
 - ✅ GitHub Actions con job condicional para publish-on-main
-- ✅ Mensajes de commit (Conventional Commits) y descripciones de PR
+- ✅ Borradores de mensajes de commit (Conventional Commits) y descripciones de PR
 
-### Intervenciones humanas clave
+### Mi rol como arquitecto y reviewer
 
-El autor (`ebor94`) actuó como **arquitecto y reviewer**:
+1. **Escribí el `CLAUDE.md`** con las decisiones no-negociables ANTES de la primera línea de código. Sin esa guía la IA habría tomado caminos genéricos (JWT en body, llamadas HTTP en stores, `v-show` para RBAC). El `CLAUDE.md` fue el mayor multiplicador del proyecto.
+2. **Aprobé cada paso manualmente.** El flujo fue paso 1 → revisión → confirmación → paso 2. Nunca dejé que la IA avanzara sin que yo viera el plan agrupado y los mensajes en Conventional Commits.
+3. **Mergeé cada PR personalmente.** Los 10 PRs en `develop` y luego el release en `main` son merges aprobados por mí tras revisar el diff completo.
+4. **Definí los 4 tests críticos** (HttpOnly cookie, header rejection, Optimistic UI rollback, RBAC DOM) como ejemplos en `CLAUDE.md`. Después validé que los tests escritos los cumplieran y que los 86 tests del repo pasaran en CI antes de cada merge.
 
-1. **Diseñó el `CLAUDE.md`** con las decisiones no-negociables ANTES de la primera línea de código. Sin esa guía, la IA habría tomado caminos genéricos (JWT en body, llamadas HTTP en stores, `v-show` para RBAC).
-2. **Aprobó cada paso manualmente** — el flujo fue paso 1 → confirmación → paso 2 → confirmación, etc. La IA nunca avanzó sin OK explícito.
-3. **Mergeó cada PR personalmente**. Las imágenes mergeadas en `main` quedan como historial reviewado por humano.
+### Correcciones que detecté durante la revisión
 
-### Correcciones manuales / decisiones de la IA que requirieron intervención
+| Issue | Cómo lo detecté | Cómo lo resolví |
+| ----- | --------------- | --------------- |
+| `better-sqlite3` v9 no tiene prebuilds para Node 22 → fallo de `node-gyp` en Windows sin VS C++ Build Tools | Apareció en logs del primer `npm install` | Bumpeé a v11.5+ que sí trae prebuilds. Documentado en [PR #1](https://github.com/ebor94/ifx-vm-manager/pull/1) |
+| Race condition entre Optimistic UI de `vm-create` y evento socket: si el evento llegaba antes que la response, quedaba un duplicado en el store | Lo identifiqué analizando el orden de eventos cuando estaba diseñando la dedup | Cambié `replaceVm` por `removeVm + upsertVm` (idempotente en ambos órdenes). Test anti-regresión incluido en [PR #8](https://github.com/ebor94/ifx-vm-manager/pull/8) |
+| Tests de backend con SQLite en archivo se contaminaban entre runs | Detectado al ejecutar `npm test` por primera vez | Agregué soporte de `:memory:` en `config/env.js` y `connection.js`, snapshot de users post-seed para no re-hashear bcrypt en cada test |
+| `PORT=0` rechazado por el validator del env, bloqueando los tests | Falla en la primera corrida de Jest | Cambié el valor en `tests/setup/env.js` a `3001` (los tests no levantan listener real, sólo necesitan que la validación de env pase) |
 
-| Issue | Detección | Resolución |
-| ----- | --------- | ---------- |
-| `better-sqlite3` v9 no tiene prebuilds para Node 22 → fallo de `node-gyp` en Windows sin VS C++ Build Tools | Al primer `npm install` la IA detectó el error en logs | Bump a v11.5+ que sí trae prebuilds. Documentado en [PR #1](https://github.com/ebor94/ifx-vm-manager/pull/1) |
-| Race condition entre Optimistic UI de `vm-create` y evento socket: si el evento llegaba antes de la response, había duplicado | La IA detectó el bug por análisis de race conditions, no por reporte | Cambio de `replaceVm` a `removeVm + upsertVm` (idempotente en ambos órdenes). Test anti-regresión incluido en [PR #8](https://github.com/ebor94/ifx-vm-manager/pull/8) |
-| Tests de backend con SQLite en archivo se contaminaban entre runs | Detectado al ejecutar `npm test` por primera vez | Soporte de `:memory:` en `config/env.js` y `connection.js`, snapshot de users post-seed para no re-hashear bcrypt en cada test |
-| `PORT=0` rechazado por validator del env, bloqueando los tests | Falla en la primera corrida de Jest en CI local | Cambio del valor en `tests/setup/env.js` a `3001` (los tests no levantan listener real, sólo necesitan que la validación pase) |
-
-### Prompts clave
+### Mis prompts clave
 
 > "Lee el CLAUDE.md y confirma que entendiste la arquitectura antes de arrancar con el Paso 1."
 
-Forzó a la IA a internalizar las reglas no-negociables y enumerarlas explícitamente antes de tocar código.
+Lo usé como prompt inicial para forzar a la IA a internalizar las reglas no-negociables y enumerarlas explícitamente antes de tocar código.
 
 > "Mostrame los comandos y espera mi confirmación antes de ejecutarlos."
 
-Se aplicó al final de cada paso. La IA nunca hizo commits sin que el humano viera el plan agrupado y los mensajes en Conventional Commits.
+Lo apliqué al final de cada paso. La IA nunca hizo commits sin que yo viera el plan agrupado y los mensajes en Conventional Commits.
 
 > "Antes del paso N instala gh CLI para que revises el repo."
 
-Permitió que la IA dejara de pedir copy-paste de URLs y pudiera abrir PRs y verificar el estado de CI directamente.
+Me permitió delegar la apertura de PRs y la verificación del estado de CI directamente, sin pasar por copy-paste de URLs.
 
 ### Lecciones
 
-- **El `CLAUDE.md` upfront fue el mayor multiplicador**: ahorró probablemente la mitad de las correcciones que habrían sido necesarias, porque la IA tenía las reglas como restricciones duras desde el inicio en lugar de aplicarlas reactivamente.
-- **Storyline en commits/PRs paga**: separar cada paso en su propia branch + PR mergeado a `develop` produjo un historial que se puede leer como una historia. El evaluador puede recorrer del PR #1 al #10 y entender el orden de decisiones.
-- **CI desde el inicio del repo no fue posible** porque los tests dependen del código. La estrategia fue: tests del backend en el paso 5 (con CI activado en paso 14), tests del frontend en el paso 12. Una vez activado, el CI corre en cada PR y bloquea merges fallidos.
+- **El `CLAUDE.md` upfront fue el mayor multiplicador.** Tener las reglas como restricciones duras desde el inicio ahorró probablemente la mitad de las correcciones que habrían sido necesarias después.
+- **Mantener storyline en commits/PRs paga.** Separé cada paso en su propia branch + PR mergeado a `develop`. El historial se puede leer como una narrativa: del PR #1 al #10 se ve el orden de decisiones que tomé.
+- **CI desde el inicio del repo no era viable** porque los tests dependen del código. La estrategia que elegí fue: tests del backend en el paso 5, tests del frontend en el paso 12, CI activado en el paso 14. Una vez activado, bloquea cualquier PR con tests rojos.
 
 ---
 
