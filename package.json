@@ -1,0 +1,29 @@
+{
+  "name": "ifx-vm-manager",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SPA de gestión de Máquinas Virtuales — Prueba técnica IFX Networks",
+  "author": "Edwin Brandon Ortega Ramírez",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev:back\" \"npm run dev:front\"",
+    "dev:back": "npm run dev --workspace=backend",
+    "dev:front": "npm run dev --workspace=frontend",
+    "test": "npm run test:back && npm run test:front",
+    "test:back": "npm run test --workspace=backend",
+    "test:front": "npm run test --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "lint": "npm run lint --workspaces --if-present",
+    "seed": "npm run seed --workspace=backend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

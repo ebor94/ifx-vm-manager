@@ -1,0 +1,10 @@
+# tipo(scope): descripción corta (max 72 chars)
+#
+# tipos: feat | fix | test | docs | chore | refactor | style
+# scopes backend: auth | vms | db | socket | config
+# scopes frontend: shared | entities | features | pages | widgets | app
+# scopes infra: docker | ci
+#
+# Cuerpo opcional — qué y por qué, no el cómo:
+
+# Closes #issue
