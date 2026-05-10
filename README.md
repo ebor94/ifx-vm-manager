@@ -43,7 +43,7 @@ docker compose up --build
 ```
 
 - Backend en http://localhost:3000
-- Frontend en http://localhost:8080
+- Frontend en http://localhost:8081
 - Volumen `ifx-vm-backend-data` persiste la SQLite entre `docker compose down`/`up`
 
 ### Credenciales seed
