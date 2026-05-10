@@ -34,8 +34,12 @@ export function useVmCreate() {
     try {
       // 2. Persistir en el servidor.
       const real = await create(data)
-      // 3. Reemplazar la fila temp por la real (ya con id numérico, timestamps reales).
-      store.replaceVm(tempId, real)
+      // 3. Dedup con el evento socket: si vm:created llegó ANTES de la
+      //    response, ya hay una fila con el id real en el store. Limpiar
+      //    primero la fila temp y luego upsert (que reemplaza si existe,
+      //    o inserta si no) garantiza UNA sola fila independiente del orden.
+      store.removeVm(tempId)
+      store.upsertVm(real)
       toast.success(`VM "${real.name}" creada`)
       return real
     } catch (err) {
