@@ -1,6 +1,9 @@
 module.exports = {
   testEnvironment: 'node',
-  testMatch: ['**/tests/**/*.test.js'],
+  testMatch: ['<rootDir>/tests/**/*.test.js'],
+  // Setea variables de entorno ANTES de cargar cualquier módulo
+  // (config/env.js valida en el require, así que esto es obligatorio).
+  setupFiles: ['<rootDir>/tests/setup/env.js'],
   collectCoverageFrom: [
     'src/**/*.js',
     '!src/db/migrate.js',
@@ -8,7 +11,7 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  setupFilesAfterEach: [],
+  testTimeout: 10000,
   verbose: true,
   clearMocks: true
 }
