@@ -30,11 +30,14 @@ if (JWT_SECRET.length < 32) {
 
 const JWT_EXPIRES_IN = withDefault('JWT_EXPIRES_IN', '8h')
 const CORS_ORIGIN = withDefault('CORS_ORIGIN', 'http://localhost:5173')
-const DB_PATH = path.resolve(
-  __dirname,
-  '../../',
-  withDefault('DB_PATH', './data/database.sqlite')
-)
+
+// `:memory:` es un literal que better-sqlite3 entiende como DB en RAM
+// (lo usamos en tests). No debe pasar por path.resolve.
+const RAW_DB_PATH = withDefault('DB_PATH', './data/database.sqlite')
+const DB_PATH =
+  RAW_DB_PATH === ':memory:'
+    ? ':memory:'
+    : path.resolve(__dirname, '../../', RAW_DB_PATH)
 
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
   throw new Error(`[config/env] PORT inválido: ${process.env.PORT}`)

@@ -7,7 +7,10 @@ const Database = require('better-sqlite3')
 const config = require('../config/env')
 
 // Garantiza que el directorio del archivo de DB exista (no se versiona).
-fs.mkdirSync(path.dirname(config.DB_PATH), { recursive: true })
+// En tests con DB_PATH=':memory:' no hay archivo, así que omitimos el mkdir.
+if (config.DB_PATH !== ':memory:') {
+  fs.mkdirSync(path.dirname(config.DB_PATH), { recursive: true })
+}
 
 const db = new Database(config.DB_PATH, {
   // En tests podemos usar ":memory:" sobreescribiendo DB_PATH.
