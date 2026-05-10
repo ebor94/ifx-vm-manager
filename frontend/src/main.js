@@ -1,11 +1,37 @@
-// Entry point del frontend.
-// Smoke imports: verifica que las capas shared/ y entities/vm/ resuelven y que
-// Tailwind + axios + Vite envs están operativos.
-// El bootstrap real (createApp + Pinia + Router + mount) llega en el Paso 11.
+// Entry point real del frontend.
+// Orden CRÍTICO del bootstrap:
+//   1. Pinia ANTES de tocar cualquier store
+//   2. auth.initialize() ANTES de instalar el router (para que los guards
+//      vean isAuthenticated correcto desde la primera navegación)
+//   3. Router después de auth
+//   4. mount al final
+
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+
+import App from './app/App.vue'
+import { router } from './app/router'
+import { useAuthStore } from '@features/auth/model/auth.store'
 
 import './app/styles/globals.css'
-import { http } from '@shared/api/http.client'
-import { API_URL } from '@shared/config/constants'
 
-// eslint-disable-next-line no-console
-console.log('[frontend] shared layer loaded. API base:', http.defaults.baseURL || API_URL)
+async function bootstrap() {
+  const app = createApp(App)
+
+  app.use(createPinia())
+
+  // Restaura la sesión si la cookie HttpOnly del backend sigue válida.
+  // GET /me — si responde 200, auth.user queda poblado y los guards lo ven.
+  // Si responde 401, auth.user queda en null y el guard envía a /login.
+  const authStore = useAuthStore()
+  await authStore.initialize()
+
+  app.use(router)
+  // Esperamos a que el router resuelva la ruta inicial antes de montar,
+  // así no hay flash de contenido protegido para usuarios no auth.
+  await router.isReady()
+
+  app.mount('#app')
+}
+
+bootstrap()
