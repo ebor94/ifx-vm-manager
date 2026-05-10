@@ -1,0 +1,60 @@
+# Stack completo del IFX VM Manager.
+# Uso:
+#   cp .env.example .env       # editar JWT_SECRET en producción
+#   docker compose up --build  # back en :3000, front en :8080
+#   docker compose down        # detener
+#   docker compose down -v     # detener + borrar la DB SQLite
+#
+# El JWT viaja en cookie HttpOnly y CORS_ORIGIN debe coincidir con el origen
+# del frontend (8080 en este compose).
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: ifx-vm-backend
+    container_name: ifx-vm-backend
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      JWT_SECRET: ${JWT_SECRET:-cambia_esto_en_produccion_minimo_32_caracteres_xx}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
+      DB_PATH: /app/data/database.sqlite
+    volumes:
+      - backend-data:/app/data
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 3s
+      start_period: 8s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+        VITE_SOCKET_URL: ${VITE_SOCKET_URL:-http://localhost:3000}
+    image: ifx-vm-frontend
+    container_name: ifx-vm-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  backend-data:
+    name: ifx-vm-backend-data

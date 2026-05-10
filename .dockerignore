@@ -1,0 +1,37 @@
+# Reduce el contexto de build (más rápido, menos cache invalidation).
+
+# Dependencias instaladas — siempre se reinstalan en la imagen.
+node_modules
+**/node_modules
+
+# Outputs
+**/dist
+**/build
+**/coverage
+
+# Variables de entorno locales — NUNCA dentro de la imagen.
+**/.env
+**/.env.*
+!**/.env.example
+
+# DB local de desarrollo
+backend/data
+backend/*.sqlite*
+
+# Git/CI/IDE
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# Documentación / config local de dev
+*.md
+!README.md
+docker-compose.yml
+.dockerignore
+.gitmessage
+.claude
+
+# Logs
+*.log
