@@ -12,6 +12,7 @@ Aplicación full-stack que permite a un Administrador crear, editar y eliminar V
 ## ⚡ Quick start
 
 ### Requisitos
+
 - Node.js ≥ 18
 - npm ≥ 9 (para workspaces)
 - _opcional:_ Docker Desktop para correr el stack containerizado
@@ -47,10 +48,10 @@ docker compose up --build
 
 ### Credenciales seed
 
-| Email             | Password     | Rol           |
-| ----------------- | ------------ | ------------- |
-| admin@ifx.com     | `Admin123!`  | Administrador |
-| cliente@ifx.com   | `Cliente123!`| Cliente       |
+| Email           | Password        | Rol           |
+| --------------- | --------------- | ------------- |
+| admin@ifx.com   | `Admin123!`   | Administrador |
+| cliente@ifx.com | `Cliente123!` | Cliente       |
 
 ---
 
@@ -127,24 +128,24 @@ Estas reglas están grabadas en `CLAUDE.md` y se cumplen sistemáticamente. Cada
 
 ## 📡 API
 
-| Método | Ruta            | Auth | Rol           | Descripción                                |
-| ------ | --------------- | ---- | ------------- | ------------------------------------------ |
-| POST   | `/login`        | No   | —             | Login → setea HttpOnly cookie              |
-| POST   | `/logout`       | No   | —             | Limpia la cookie                           |
-| GET    | `/me`           | Sí   | Todos         | Retorna el usuario actual                  |
-| GET    | `/vms`          | Sí   | Todos         | Lista las VMs                              |
-| POST   | `/vms`          | Sí   | Administrador | Crea una VM                                |
-| PUT    | `/vms/:id`      | Sí   | Administrador | Actualiza una VM (acepta payloads parciales)|
-| DELETE | `/vms/:id`      | Sí   | Administrador | Elimina una VM                             |
-| GET    | `/health`       | No   | —             | Healthcheck (Docker)                       |
+| Método | Ruta         | Auth | Rol           | Descripción                                 |
+| ------- | ------------ | ---- | ------------- | -------------------------------------------- |
+| POST    | `/login`   | No   | —            | Login → setea HttpOnly cookie               |
+| POST    | `/logout`  | No   | —            | Limpia la cookie                             |
+| GET     | `/me`      | Sí  | Todos         | Retorna el usuario actual                    |
+| GET     | `/vms`     | Sí  | Todos         | Lista las VMs                                |
+| POST    | `/vms`     | Sí  | Administrador | Crea una VM                                  |
+| PUT     | `/vms/:id` | Sí  | Administrador | Actualiza una VM (acepta payloads parciales) |
+| DELETE  | `/vms/:id` | Sí  | Administrador | Elimina una VM                               |
+| GET     | `/health`  | No   | —            | Healthcheck (Docker)                         |
 
 ### Eventos Socket.io (room `vm-updates`)
 
-| Evento         | Payload                | Cuándo                        |
-| -------------- | ---------------------- | ----------------------------- |
-| `vm:created`   | objeto VM completo     | Después de POST /vms exitoso  |
-| `vm:updated`   | objeto VM completo     | Después de PUT /vms/:id ok    |
-| `vm:deleted`   | `{ id }`               | Después de DELETE /vms/:id ok |
+| Evento         | Payload            | Cuándo                        |
+| -------------- | ------------------ | ------------------------------ |
+| `vm:created` | objeto VM completo | Después de POST /vms exitoso  |
+| `vm:updated` | objeto VM completo | Después de PUT /vms/:id ok    |
+| `vm:deleted` | `{ id }`         | Después de DELETE /vms/:id ok |
 
 El handler del cliente usa `upsertVm` para deduplicar con la Optimistic UI ya aplicada.
 
@@ -162,18 +163,19 @@ npm run test:front     # Vitest (53 tests)
 
 ### Cobertura destacada
 
-| Capa                        | Tests | Coverage |
-| --------------------------- | ----- | -------- |
-| Backend `auth`              | 10    | 100%     |
-| Backend `vms` CRUD          | 17    | ~95%     |
-| Backend middleware          | 6     | 100%     |
-| Frontend helpers            | 9     | 100%     |
-| Frontend store (sync)       | 10    | 97%      |
-| Frontend Optimistic UI x3   | 12    | 100%     |
+| Capa                         | Tests | Coverage |
+| ---------------------------- | ----- | -------- |
+| Backend `auth`             | 10    | 100%     |
+| Backend `vms` CRUD         | 17    | ~95%     |
+| Backend middleware           | 6     | 100%     |
+| Frontend helpers             | 9     | 100%     |
+| Frontend store (sync)        | 10    | 97%      |
+| Frontend Optimistic UI x3    | 12    | 100%     |
 | Frontend filtros + métricas | 13    | 100%     |
-| Frontend UI + RBAC DOM      | 8     | 100%     |
+| Frontend UI + RBAC DOM       | 8     | 100%     |
 
 Tests críticos del proyecto (todos pasando) ⭐:
+
 - `Set-Cookie` con `HttpOnly` + body sin `token` (backend)
 - `authenticate` ignora `Authorization` header (backend)
 - `useVmDelete` restaura la VM si la API falla (frontend, Optimistic UI rollback)
@@ -188,11 +190,13 @@ docker compose up --build
 ```
 
 **Imágenes:**
+
 - `backend/Dockerfile` — `node:20-bookworm-slim` multi-stage, usuario no-root, healthcheck.
 - `frontend/Dockerfile` — multi-stage build con Node + serve con `nginx:alpine`. Imagen final ~25 MB.
 - Volumen `ifx-vm-backend-data` para persistir SQLite.
 
 **Imágenes publicadas en GHCR (push a `main`):**
+
 - `ghcr.io/ebor94/ifx-vm-backend:latest`
 - `ghcr.io/ebor94/ifx-vm-frontend:latest`
 
@@ -223,18 +227,18 @@ main          ← releases (tagueados v*.*.*)
 
 ### Storyline del proyecto
 
-| PR | Branch | Tema |
-| -- | ------ | ---- |
-| #1 | `feat/database-setup`  | Backend foundation: env, schema, seed |
-| #2 | `feat/backend-auth`    | JWT en HttpOnly cookie + login/logout/me |
-| #3 | `feat/backend-crud`    | CRUD VMs + Socket.io |
-| #4 | `test/backend`         | Jest + Supertest, 33 tests |
-| #5 | `feat/frontend-shared` | Capas `shared/` y `entities/vm/` |
-| #6 | `feat/frontend-features`| Optimistic UI: auth, vm-create, vm-edit, vm-delete |
-| #7 | `feat/frontend-ui`     | Widgets + páginas + bootstrap real |
-| #8 | `test/frontend`        | Vitest, 53 tests |
-| #9 | `feat/docker-cicd`     | Docker + GitHub Actions |
-| #10| `docs/readme`          | Este README |
+| PR  | Branch                     | Tema                                               |
+| --- | -------------------------- | -------------------------------------------------- |
+| #1  | `feat/database-setup`    | Backend foundation: env, schema, seed              |
+| #2  | `feat/backend-auth`      | JWT en HttpOnly cookie + login/logout/me           |
+| #3  | `feat/backend-crud`      | CRUD VMs + Socket.io                               |
+| #4  | `test/backend`           | Jest + Supertest, 33 tests                         |
+| #5  | `feat/frontend-shared`   | Capas `shared/` y `entities/vm/`               |
+| #6  | `feat/frontend-features` | Optimistic UI: auth, vm-create, vm-edit, vm-delete |
+| #7  | `feat/frontend-ui`       | Widgets + páginas + bootstrap real                |
+| #8  | `test/frontend`          | Vitest, 53 tests                                   |
+| #9  | `feat/docker-cicd`       | Docker + GitHub Actions                            |
+| #10 | `docs/readme`            | Este README                                        |
 
 ---
 
@@ -245,7 +249,7 @@ Esta sección documenta cómo usé la IA durante el desarrollo: qué delegué, q
 ### Herramientas
 
 - **Claude Code** ([Anthropic](https://claude.com/claude-code)) modelo Opus 4.7 (1M de contexto) — lo usé como pair programmer end-to-end para acelerar la escritura de código repetitivo, tests, configuración Docker/CI y borradores de mensajes de commit.
-- **`gh` CLI** que instalé a mitad del proyecto para abrir PRs y verificar el estado del CI directamente desde la terminal sin pasar por copy-paste.
+- **`gh` CLI**  para abrir PRs y verificar el estado del CI directamente desde la terminal sin pasar por copy-paste.
 
 ### Lo que delegué a la IA (con mi review en cada paso)
 
@@ -266,12 +270,12 @@ Esta sección documenta cómo usé la IA durante el desarrollo: qué delegué, q
 
 ### Correcciones que detecté durante la revisión
 
-| Issue | Cómo lo detecté | Cómo lo resolví |
-| ----- | --------------- | --------------- |
-| `better-sqlite3` v9 no tiene prebuilds para Node 22 → fallo de `node-gyp` en Windows sin VS C++ Build Tools | Apareció en logs del primer `npm install` | Bumpeé a v11.5+ que sí trae prebuilds. Documentado en [PR #1](https://github.com/ebor94/ifx-vm-manager/pull/1) |
+| Issue                                                                                                                                             | Cómo lo detecté                                                                | Cómo lo resolví                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `better-sqlite3` v9 no tiene prebuilds para Node 22 → fallo de `node-gyp` en Windows sin VS C++ Build Tools                                  | Apareció en logs del primer `npm install`                                     | Bumpeé a v11.5+ que sí trae prebuilds. Documentado en[PR #1](https://github.com/ebor94/ifx-vm-manager/pull/1)                                                              |
 | Race condition entre Optimistic UI de `vm-create` y evento socket: si el evento llegaba antes que la response, quedaba un duplicado en el store | Lo identifiqué analizando el orden de eventos cuando estaba diseñando la dedup | Cambié `replaceVm` por `removeVm + upsertVm` (idempotente en ambos órdenes). Test anti-regresión incluido en [PR #8](https://github.com/ebor94/ifx-vm-manager/pull/8) |
-| Tests de backend con SQLite en archivo se contaminaban entre runs | Detectado al ejecutar `npm test` por primera vez | Agregué soporte de `:memory:` en `config/env.js` y `connection.js`, snapshot de users post-seed para no re-hashear bcrypt en cada test |
-| `PORT=0` rechazado por el validator del env, bloqueando los tests | Falla en la primera corrida de Jest | Cambié el valor en `tests/setup/env.js` a `3001` (los tests no levantan listener real, sólo necesitan que la validación de env pase) |
+| Tests de backend con SQLite en archivo se contaminaban entre runs                                                                                 | Detectado al ejecutar `npm test` por primera vez                               | Agregué soporte de `:memory:` en `config/env.js` y `connection.js`, snapshot de users post-seed para no re-hashear bcrypt en cada test                             |
+| `PORT=0` rechazado por el validator del env, bloqueando los tests                                                                               | Falla en la primera corrida de Jest                                              | Cambié el valor en `tests/setup/env.js` a `3001` (los tests no levantan listener real, sólo necesitan que la validación de env pase)                               |
 
 ### Mis prompts clave
 
