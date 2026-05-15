@@ -590,8 +590,7 @@ Esta sección debe actualizarse al final del proyecto para el README.
 - [ ] RBAC: La IA usó v-show → corregido a v-if para eliminar del DOM
 - [ ] Tests: La IA no contempló deduplicación de eventos Socket.io → implementado manualmente
 
-### Prompts clave utilizados
-*(Agregar 2-3 prompts más importantes al finalizar)*
+
 
 ---
 
